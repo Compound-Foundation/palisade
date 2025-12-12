@@ -1,7 +1,6 @@
 {
   "name": "palisade",
   "version": "1.0.0",
-  "type": "module",
   "description": "The Compound Web3 Front-end",
   "main": "index.js",
   "scripts": {
