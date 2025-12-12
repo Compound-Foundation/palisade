@@ -1,6 +1,7 @@
-const ipfsClient = require('ipfs-http-client');
-const { Agent } = require('https');
-const { writeFile } = require('fs/promises');
+import { create, globSource } from 'kubo-rpc-client';
+import { globby } from 'globby';
+import { Agent } from 'https';
+import { writeFile } from 'fs/promises';
 
 const ipfsAuth = process.env['IPFS_AUTH'] || "";
 const ipfsHost = process.env['IPFS_HOST'];
@@ -15,7 +16,7 @@ if (!ipfsHost) {
 let authorization = `Basic ${Buffer.from(ipfsAuth).toString('base64')}`;
 
 function buildIpfsClient() {
-  return ipfsClient.create({
+  return create({
     host: ipfsHost,
     port: ipfsPort,
     protocol: ipfsProtocol,
@@ -32,22 +33,38 @@ function buildIpfsClient() {
 }
 
 (async function() {
-  let ipfs = buildIpfsClient();
-  function progress(size, path) {
-    console.log(`Sent ${Math.round(size / 1000)}KB for ${path}`);
-  }
-  let app = await ipfs.add(ipfsClient.globSource('build', { recursive: true, progress }));
-  if (app === null) {
-    throw new Error("Missing core application cid");
-  }
-  console.log(`Pushed ${app.path} [size=${app.size}, cid=${app.cid}]`);
+  const allDeployableFiles = await globby(['build/**/*']);
+  const expectedFileCount = allDeployableFiles.length;
 
-  urls = [
+  let ipfs = buildIpfsClient();
+
+  // Inspired from: https://community.infura.io/t/upload-files-from-a-folder-under-a-wrapping-directory-cid-using-the-kubo-rpc-client-and-nodejs/6045
+  const filesUploaded = [];
+  for await (const file of ipfs.addAll(globSource('build', '**/*'), { wrapWithDirectory: true })) {
+    filesUploaded.push(file);
+    console.log(`Pushed ${file.path} [size=${file.size}, cid=${file.cid}]`);
+  }
+
+  console.log(`Uploaded ${filesUploaded.length} total files.`);
+
+  // Verify the number of files uploaded matches the number
+  // of files we counted in the deploy directory.
+  if (filesUploaded.length < expectedFileCount) {
+    console.log(`Expected number of files to upload: ${expectedFileCount}`);
+    console.log(`Uploaded total number of files: ${filesUploaded.length}`);
+
+    throw new Error('Failed to upload enough files.');
+  }
+
+  // Not a fan of how the new kubo client only supports addAll
+  // and used the last file as the directory... -_-
+  const app = filesUploaded[filesUploaded.length - 1];
+
+  const urls = [
     ["IPFS Url", `https://ipfs.io/ipfs/${app.cid}`],
-    ["Cloudflare Url", `https://cloudflare-ipfs.com/ipfs/${app.cid}`],
     ["Infura Url", `https://compound-app.infura-ipfs.io/ipfs/${app.cid}`],
   ];
-  urlText = urls.map(([name, url]) => `  * ${name}: ${url}`).join("\n");
+  const urlText = urls.map(([name, url]) => `  * ${name}: ${url}`).join("\n");
 
   console.log("\n\n");
   console.log("🗺  App successfully deployed to ipfs:\n");
