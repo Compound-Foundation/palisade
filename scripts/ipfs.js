@@ -1,34 +1,20 @@
-import { create, globSource } from 'kubo-rpc-client';
+import { PinataSDK } from "pinata";
 import { globby } from 'globby';
-import { Agent } from 'https';
+import { readFileSync } from 'fs';
 import { writeFile } from 'fs/promises';
 
-const ipfsAuth = process.env['IPFS_AUTH'] || "";
-const ipfsHost = process.env['IPFS_HOST'];
-const ipfsPort = process.env['IPFS_PORT'] ? parseInt(process.env['IPFS_PORT']) : 5001;
-const ipfsProtocol = process.env['IPFS_SSL'] === 'false' ? 'http' : 'https';
+const pinataJwt = process.env['PINATA_JWT'] || "";
+const gatewayUrl = process.env['PINATA_GATEWAY_URL'];
 
-if (!ipfsHost) {
-  console.error("Must set IPFS_HOST");
+if (!gatewayUrl) {
+  console.error("Must set PINATA_GATEWAY_URL");
   process.exit(1);
 }
 
-let authorization = `Basic ${Buffer.from(ipfsAuth).toString('base64')}`;
-
-function buildIpfsClient() {
-  return create({
-    host: ipfsHost,
-    port: ipfsPort,
-    protocol: ipfsProtocol,
-    headers: {
-      authorization
-    },
-    apiPath: '/api/v0',
-    agent: new Agent({
-      keepAlive: false,
-      maxSockets: Infinity
-    }),
-    timeout: '10m'
+function buildPinataClient() {
+  return new PinataSDK({
+    pinataJwt: pinataJwt,
+    pinataGateway: gatewayUrl
   });
 }
 
@@ -36,33 +22,42 @@ function buildIpfsClient() {
   const allDeployableFiles = await globby(['build/**/*']);
   const expectedFileCount = allDeployableFiles.length;
 
-  let ipfs = buildIpfsClient();
+  let ipfs = buildPinataClient();
 
-  // Inspired from: https://community.infura.io/t/upload-files-from-a-folder-under-a-wrapping-directory-cid-using-the-kubo-rpc-client-and-nodejs/6045
-  const filesUploaded = [];
-  for await (const file of ipfs.addAll(globSource('build', '**/*'), { wrapWithDirectory: true })) {
-    filesUploaded.push(file);
-    console.log(`Pushed ${file.path} [size=${file.size}, cid=${file.cid}]`);
+  let allFilesToUpload = [];
+  for (const fileName of allDeployableFiles) {
+    console.log('Reading file: ', fileName);
+    const adjustedFileName = fileName.replace('build/', '');
+    try {
+      const blob = new Blob([readFileSync(fileName)]);
+      const file = new File([blob], adjustedFileName, { type: "text/plain"})
+      allFilesToUpload.push(file);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  console.log(`Uploaded ${filesUploaded.length} total files.`);
+  let uploaded = "";
+  try {
+    uploaded = await ipfs.upload.public.fileArray(allFilesToUpload);
+  } catch (error) {
+    console.log(error)
+  }
+
+  console.log(`Uploaded ${uploaded.number_of_files} total files.`);
 
   // Verify the number of files uploaded matches the number
   // of files we counted in the deploy directory.
-  if (filesUploaded.length < expectedFileCount) {
+  if (uploaded.number_of_files < expectedFileCount) {
     console.log(`Expected number of files to upload: ${expectedFileCount}`);
-    console.log(`Uploaded total number of files: ${filesUploaded.length}`);
+    console.log(`Uploaded total number of files: ${uploaded.number_of_files}`);
 
     throw new Error('Failed to upload enough files.');
   }
 
-  // Not a fan of how the new kubo client only supports addAll
-  // and used the last file as the directory... -_-
-  const app = filesUploaded[filesUploaded.length - 1];
-
   const urls = [
-    ["IPFS Url", `https://ipfs.io/ipfs/${app.cid}`],
-    ["Infura Url", `https://compound-app.infura-ipfs.io/ipfs/${app.cid}`],
+    ["IPFS Url", `https://ipfs.io/ipfs/${uploaded.cid}`],
+    ["Pinata Url", `https://internal-v2-app.comp.xyz/ipfs/${uploaded.cid}`],
   ];
   const urlText = urls.map(([name, url]) => `  * ${name}: ${url}`).join("\n");
 
@@ -71,5 +66,5 @@ function buildIpfsClient() {
   console.log(urlText);
   console.log("\n");
 
-  writeFile('.release', `${app.cid}`, 'utf8');
+  writeFile('.release', `${uploaded.cid}`, 'utf8');
 })();

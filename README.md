@@ -28,18 +28,10 @@ The following is an example configuration file:
   },
   "DATA_PROVIDERS": {
     "development": "http://localhost:8545",
-    "goerli": "https://goerli.infura.io/v3/YOUR-PROJECT-ID",
-    "rinkeby": "https://rinkeby.infura.io/v3/YOUR-PROJECT-ID",
-    "kovan": "https://kovan.infura.io/v3/YOUR-PROJECT-ID",
-    "ropsten": "https://ropsten.infura.io/v3/YOUR-PROJECT-ID",
     "mainnet": "https://mainnet.infura.io/v3/YOUR-PROJECT-ID"
   },
   "NETWORK_MAP": {
     "mainnet": 1,
-    "ropsten": 3,
-    "rinkeby": 4,
-    "goerli": 5,
-    "kovan": 42,
     "development": 999
   },
   "DEFAULT_NETWORK": "mainnet",
@@ -50,7 +42,7 @@ The following is an example configuration file:
 Each of the top level keys have the following functions:
 
 - `API_BASE_URL_MAP` - Object mapping of Eth network name as key and value being the desired Compound Api host. This can be left as is.
-- `DATA_PROVIDERS` - Object mapping of Eth network name as key and value being the url of a corresponding JSON RPC host. This example shows Infura as a sample JSON RPC provider and you can find more information [here](https://infura.io/docs/ethereum). Note: this can be specified by setting in the env var `DATA_PROVIDERS` as JSON (e.g. `export DATA_PROVIDERS='{"rinkeby": "https://infura.io/..."}'`).
+- `DATA_PROVIDERS` - Object mapping of Eth network name as key and value being the url of a corresponding JSON RPC host. This example shows Infura as a sample JSON RPC provider and you can find more information [here](https://infura.io/docs/ethereum). Note: this can be specified by setting in the env var `DATA_PROVIDERS` as JSON (e.g. `export DATA_PROVIDERS='{"mainnet": "https://infura.io/..."}'`).
 - `NETWORK_MAP` - Object mapping of Eth network name as key and value being the corresponding NetworkId value. This can be left as is.
 - `WALLET_CONNECT_PROJECT_ID` - Wallect Connect Project Id required to use Wallet Connect as a wallet type in the app. You can find more information [here](https://docs.walletconnect.com/2.0/). Note: this can be specified by setting the env var `WALLET_CONNECT_PROJECT_ID`. This id is not required unless you want to enable wallet connect usage.
 
@@ -113,24 +105,22 @@ Now the `/build` directly should contain all of the files necessary to serve you
 
 To deploy the web3 front-end on IPFS, you first should be familiar with [Hosting a single-page website on IPFS](https://docs.ipfs.io/how-to/websites-on-ipfs/single-page-website/). Follow the instructions and you should be able to add all the files in the `/build` directory and obtain a IPFS hash which you can then open on any gateway provider to view the hosted web3 front-end.
 
-Alternatively, you may wish to deploy to an IPFS hosting service like [Infura IPFS](https://infura.io/docs/ipfs#section/Getting-started). This repo includes a script to deploy the `/build` directory to an IPFS host specified by several environment variables.
+Alternatively, you may wish to deploy to an IPFS hosting service like [Pinata](https://docs.pinata.cloud/quickstart). This repo includes a script to deploy the `/build` directory to an IPFS host specified by several environment variables.
 
-To deploy a build to Infura IPFS:
+To deploy a build to Pinata IPFS:
 
 ```bash
-IPFS_AUTH="PROJECT_ID:PROJECT_SECRET" \
-  IPFS_HOST="ipfs.infura.io" \
-  IPFS_PORT=5001 \
+PINATA_JWT="YOUR_PINATA_API_JWT" \
+  PINATA_GATEWAY_URL="YOUR_PINATA_GATEWAY_URL" \
   yarn deploy-ipfs
 ```
 
 Each of environment variables have the following functions:
 
-- `IPFS_AUTH` - Basic authentication for header for using the Infura IPFS add endpoint. You can find more information [here](https://infura.io/docs/ipfs#section/Authentication).
-- `IPFS_HOST` - IPFS Pinning service host.
-- `IPFS_PORT` - IPFS Pinning service host port.
+- `PINATA_JWT` - JWT received when creating a Pinata API key with the proper permissions. You can find more information [here](https://docs.pinata.cloud/account-management/api-keys).
+- `PINATA_GATEWAY_URL` - Pinata gateway url used to interact with the Pinata SDK.
 
-Note: The `deploy-ipfs` script has been tested and used with Infura IPFS. You may need a few changes to support alternative pinning services.
+Note: The `deploy-ipfs` script has been tested and used with Pinata IPFS. You may need a few changes to support alternative pinning services.
 
 ### Google Cloud Storage
 

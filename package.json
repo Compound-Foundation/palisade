@@ -84,8 +84,8 @@
     "express": "^4.17.1",
     "globby": "^16.0.0",
     "google-translate": "^3.0.0",
-    "kubo-rpc-client": "^6.0.2",
     "node-fetch": "2",
+    "pinata": "^2.5.3",
     "postcss-url": "^8.0.0",
     "puppeteer": "^9.1.1"
   },
