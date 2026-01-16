@@ -57,7 +57,7 @@ function buildPinataClient() {
 
   const urls = [
     ["IPFS Url", `https://ipfs.io/ipfs/${uploaded.cid}`],
-    ["Pinata Url", `https://internal-v2-app.comp.xyz/ipfs/${uploaded.cid}`],
+    ["Pinata Url", `https://${gatewayUrl}/ipfs/${uploaded.cid}`],
   ];
   const urlText = urls.map(([name, url]) => `  * ${name}: ${url}`).join("\n");
 

@@ -7,7 +7,7 @@
     "mainnet": "https://infura.io/mainnet"
   },
   "NETWORK_MAP": {
-    "mainnet": 1,
+    "mainnet": 1
   },
   "DEFAULT_NETWORK": "mainnet"
 }
