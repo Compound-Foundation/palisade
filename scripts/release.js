@@ -22,6 +22,7 @@ async function release(cid, url, signature) {
   try {
     json = await res.json();
   } catch (error) {
+    console.log("received response: ", res);
     throw new Error(`Response was not valid JSON: ${error}`);
   }
 
