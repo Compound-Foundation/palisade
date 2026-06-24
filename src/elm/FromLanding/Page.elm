@@ -88,7 +88,7 @@ landingUrlForPage : Network -> LandingPage -> String
 landingUrlForPage network page =
     let
         baseUrl =
-            "https://compound.finance"
+            "https://compound.xyz"
 
         networkParam =
             String.toLower (networkName network)
