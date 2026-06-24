@@ -12,6 +12,7 @@ type Page
     | Propose
     | CrowdPropose
     | TermsOfService
+    | Privacy
     | Vote
 
 
@@ -46,6 +47,9 @@ getPageTitle userLanguage page =
         TermsOfService ->
             buildTitle userLanguage (Just (Translations.site_title_terms userLanguage))
 
+        Privacy ->
+            buildTitle userLanguage (Just (Translations.site_title_privacy userLanguage))
+
         Vote ->
             buildTitle userLanguage (Just (Translations.site_title_vote userLanguage))
 
@@ -70,6 +74,9 @@ getHrefUrl page =
 
         TermsOfService ->
             "#terms"
+
+        Privacy ->
+            "#privacy"
 
         Vote ->
             "#vote"
@@ -96,6 +103,9 @@ getPage location =
 
         Just [ "terms" ] ->
             TermsOfService
+
+        Just [ "privacy" ] ->
+            Privacy
 
         Just [ "vote" ] ->
             Vote

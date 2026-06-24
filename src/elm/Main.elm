@@ -24,6 +24,7 @@ import DappInterface.Container
 import DappInterface.MainModel exposing (ChooseWalletModalState(..), Model, PrimaryActionType(..), getConfig, getCurrentConfig, getProvider)
 import DappInterface.Page exposing (Page(..), getPage, getPageTitle)
 import DappInterface.PrimaryActionModal
+import DappInterface.Privacy as DappPrivacy
 import DappInterface.Propose as Propose
 import DappInterface.Terms as DappTerms
 import DappInterface.Vote as Vote
@@ -1237,6 +1238,15 @@ viewFull ({ page, liquidateModel, transactionState, compoundState, tokenState, o
             , replFooter
             ]
 
+        Privacy ->
+            [ header
+            , DappPrivacy.view userLanguage
+            , chooseWalletModal userLanguage model
+            , claimCompView
+            , footer
+            , replFooter
+            ]
+
         Vote ->
             [ alertView model
             , header
@@ -1272,13 +1282,13 @@ alertView ({ account, maybeGasPrice, network, userLanguage } as model) =
                                 False
                 in
                 case ( network, hasZeroEthBalance ) of
-                    ( Just testNet, True) ->
+                    ( Just testNet, True ) ->
                         testNetworkNoEtherAlert userLanguage (Network.networkName testNet) address
 
-                    ( Just testNet, _) ->
+                    ( Just testNet, _ ) ->
                         testNetworkAlert userLanguage (Network.networkName testNet)
 
-                    ( Nothing, True) ->
+                    ( Nothing, True ) ->
                         text ""
 
                     _ ->

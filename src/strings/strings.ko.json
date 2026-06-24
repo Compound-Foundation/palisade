@@ -162,6 +162,7 @@
     "site_title": "Compound",
     "site_title_liquidate": "청산",
     "site_title_terms": "약관",
+    "site_title_privacy": "개인정보",
     "site_title_dashboard": "대시보드",
     "site_title_v2": "V2",
     "site_title_propose": "제안서 작성",
@@ -347,6 +348,7 @@
     "status": "상태",
 
     "terms": "약관",
+    "privacy": "개인정보",
 
     "year": "년",
     "years": "년",
