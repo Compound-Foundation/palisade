@@ -137,7 +137,7 @@ view maybeConfig maybeEtherUsdPrice ({ borrowingContainerState, preferences } as
                         [ text "V2 Deprecation has begun. Please begin migrating positions to V3 for continued support. Learn more in this "
                         , a (href External "https://www.comp.xyz/t/gauntlet-compound-v2-deprecation-proposal/7237") [ text "forum post" ]
                         , text ".  Get started with "
-                        ,  a (href External "https://app.compound.finance/") [ text "V3 here" ]
+                        ,  a (href External "https://app.compound.xyz/") [ text "V3 here" ]
                         , text "."
                         ]
                     ]

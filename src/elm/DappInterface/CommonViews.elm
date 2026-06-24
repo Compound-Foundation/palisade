@@ -172,10 +172,10 @@ pageHeader userLanguage page connectedWallet account _ governanceState _ =
                             emptyClasses
 
                 v2MarketsExternalLink =
-                    "https://app.compound.finance/markets/v2"
+                    "https://app.compound.xyz/markets/v2"
 
                 v3VoteExternalLink =
-                    "https://app.compound.finance/vote"
+                    "https://app.compound.xyz/vote"
             in
             [ a (class homeClass :: href PageNavigation (getHrefUrl Home)) [ text (Translations.dashboard userLanguage) ]
             , a (href External v2MarketsExternalLink) [ text (Translations.markets userLanguage) ]
@@ -186,7 +186,7 @@ pageHeader userLanguage page connectedWallet account _ governanceState _ =
         [ div [ class "container-large" ]
             [ div [ class "row align-middle" ]
                 [ div [ class "col-xs-3 col-sm-4" ]
-                    [ a (class "brand" :: href External "https://compound.finance") []
+                    [ a (class "brand" :: href External "https://compound.xyz") []
                     ]
                 , div [ class "col-xs-5 col-sm-4 mobile-hide text-center links" ] links
                 , div [ class "col-xs-9 col-sm-4 text-right actions" ]
@@ -216,9 +216,8 @@ pageFooter userLanguage maybeBlockNumber preferences model =
                 [ div [ class "col-xs-12 col-sm-2" ]
                     [ a ([ class "brand" ] |> List.append (href PageNavigation "/")) [] ]
                 , div [ class "col-xs-12 col-sm-10 links" ]
-                    [ a (target "_blank" :: href External "https://app.compound.finance/markets/v2") [ text (Translations.markets userLanguage) ]
-                    , a (target "_blank" :: href External "https://compound.finance/governance") [ text (Translations.governance userLanguage) ]
-                    , a (target "_blank" :: href External "https://compound.finance/governance/comp") [ text (Translations.comp userLanguage) ]
+                    [ a (target "_blank" :: href External "https://app.compound.xyz/markets/v2") [ text (Translations.markets userLanguage) ]
+                    , a (target "_blank" :: href External "https://compound.xyz/governance") [ text (Translations.governance userLanguage) ]
                     , a (href PageNavigation (getHrefUrl TermsOfService)) [ text (Translations.terms userLanguage) ]
                     , a (target "_blank" :: href External "https://medium.com/compound-finance/the-compound-guide-to-supplying-borrowing-crypto-assets-94821f2950a0") [ text (Translations.support userLanguage) ]
                     ]
@@ -228,9 +227,8 @@ pageFooter userLanguage maybeBlockNumber preferences model =
                     [ div [ class "mobile-hide" ]
                         [ span [ class ("dot-indicator" ++ indicatorColorClass) ] []
                         , label [ class "small" ] [ text (Translations.latest_block userLanguage (formatBlockNumber maybeBlockNumber)) ]
-                        , a (target "_blank" :: href External "https://app.compound.finance/markets/v2") [ text (Translations.markets userLanguage) ]
-                        , a (target "_blank" :: href External "https://compound.finance/governance") [ text (Translations.governance userLanguage) ]
-                        , a (target "_blank" :: href External "https://compound.finance/governance/comp") [ text (Translations.comp userLanguage) ]
+                        , a (target "_blank" :: href External "https://app.compound.xyz/markets/v2") [ text (Translations.markets userLanguage) ]
+                        , a (target "_blank" :: href External "https://compound.xyz/governance") [ text (Translations.governance userLanguage) ]
                         , a (target "_blank" :: href External "https://medium.com/compound-finance/the-compound-guide-to-supplying-borrowing-crypto-assets-94821f2950a0") [ text (Translations.support userLanguage) ]
                         , a (href PageNavigation (getHrefUrl TermsOfService)) [ text (Translations.terms userLanguage) ]
                         ]
