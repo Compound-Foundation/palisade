@@ -162,6 +162,7 @@
     "site_title": "Compound",
     "site_title_liquidate": "Liquidar",
     "site_title_terms": "Condiciones",
+    "site_title_privacy": "Privacidad",
     "site_title_dashboard": "Tablero",
     "site_title_v2": "V2",
     "site_title_propose": "Crear propuesta",
@@ -347,6 +348,7 @@
     "status": "Estado",
 
     "terms": "Condiciones",
+    "privacy": "Privacidad",
 
     "year": "año",
     "years": "años",
