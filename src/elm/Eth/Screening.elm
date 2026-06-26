@@ -10,9 +10,12 @@ Ported from webb3-frontend PR #10. On wallet connect, the app screens the
 connected address against a Cloudflare Worker and exposes the account only when
 the worker explicitly reports it is NOT flagged.
 
+The endpoint URL is injected via flags (`SCREENING_ENDPOINT` in `config/env/*.json`)
+and passed in by the caller.
+
 Contract:
 
-    Request:  POST    (JSON body { address : <lowercased-addr> })
+    Request:  POST <SCREENING_ENDPOINT>   (JSON body { address : <lowercased-addr> })
     Response: 200 { flagged : Bool }   -- true = on the list; threat detail is not exposed
 
 "Allowed" means strictly `flagged == False`. Everything else is BLOCKED
@@ -28,14 +31,6 @@ import Json.Decode
 import Json.Encode
 
 
-{-| Hardcoded screening endpoint. It ships in the public bundle; the worker's own
-CORS allowlist + per-IP rate limiting is the real gate.
--}
-screeningUrl : String
-screeningUrl =
-    ""
-
-
 {-| Fail-closed after this many milliseconds with no response. -}
 timeoutMs : Float
 timeoutMs =
@@ -48,7 +43,7 @@ type ScreeningStatus
     | Blocked
 
 
-{-| Screen `address` against the endpoint. The result is tagged with the
+{-| Screen `address` against the `endpoint`. The result is tagged with the
 originating `CustomerAddress` so the caller can ignore stale results once the
 connected account has changed.
 
@@ -56,8 +51,8 @@ In elm/http 1.0 `Http.request` yields an `Http.Request Bool`; piping it through
 `Http.send (tagger address)` produces the `Cmd` and supplies the address half of
 the caller's two-argument tagger (`Http.send` itself only passes the `Result`).
 -}
-screenAddress : CustomerAddress -> (CustomerAddress -> Result Http.Error Bool -> msg) -> Cmd msg
-screenAddress address tagger =
+screenAddress : String -> CustomerAddress -> (CustomerAddress -> Result Http.Error Bool -> msg) -> Cmd msg
+screenAddress endpoint address tagger =
     let
         body =
             Json.Encode.object
@@ -67,7 +62,7 @@ screenAddress address tagger =
             Http.request
                 { method = "POST"
                 , headers = []
-                , url = screeningUrl
+                , url = endpoint
                 , body = Http.jsonBody body
                 , expect = Http.expectJson (Json.Decode.field "flagged" Json.Decode.bool)
                 , timeout = Just timeoutMs

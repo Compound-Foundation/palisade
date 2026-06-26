@@ -142,6 +142,7 @@ type alias Model =
     , screeningStatus : Eth.Screening.ScreeningStatus
     , pendingScreeningAccount : Maybe CustomerAddress
     , screeningOverlayVisible : Bool
+    , screeningEndpoint : String
     , commonViewsModel : CommonViews.Model
     , connectedEthWalletModel : ConnectedEthWallet.Model
     , claimCompModalState : ClaimCompModal.Model

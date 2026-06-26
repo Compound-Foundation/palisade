@@ -102,6 +102,7 @@ type alias Flags =
     , userAgent : Json.Encode.Value
     , providerType : Json.Encode.Value
     , language : String
+    , screeningEndpoint : String
     }
 
 
@@ -197,7 +198,7 @@ primaryActionModalTranslator =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userAgent, providerType, language } =
+init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userAgent, providerType, language, screeningEndpoint } =
     let
         initialPage =
             Url.fromString path
@@ -265,6 +266,7 @@ init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userA
       , screeningStatus = Eth.Screening.Blocked
       , pendingScreeningAccount = Nothing
       , screeningOverlayVisible = False
+      , screeningEndpoint = screeningEndpoint
       , network = Nothing
       , commonViewsModel = initCommonViewsModel
       , connectedEthWalletModel = initConnectedEthWalletModel
@@ -525,7 +527,7 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
                 , tokenState = clearTokenState model.tokenState
                 , screeningOverlayVisible = False
               }
-            , Eth.Screening.screenAddress newAccount ScreeningResult
+            , Eth.Screening.screenAddress model.screeningEndpoint newAccount ScreeningResult
             )
 
         ConnectedEthWallet.ResetToChooseProvider ->
