@@ -34,6 +34,7 @@ import Eth.Compound exposing (CompoundMsg(..), clearCompoundState, compoundInit,
 import Eth.Config exposing (Config, loadConfigs)
 import Eth.Governance exposing (GovernanceMsg(..))
 import Eth.Oracle exposing (OracleMsg(..), oracleInit, oracleSubscriptions, oracleUpdate)
+import Eth.Screening
 import Eth.Token exposing (TokenMsg(..), clearTokenState, tokenInit, tokenNewBlockCmd, tokenSubscriptions, tokenUpdate)
 import Eth.Transaction as Transaction exposing (TransactionMsg)
 import Html exposing (Html, a, button, div, span, text)
@@ -258,6 +259,8 @@ init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userA
       , configAbis = configAbiFiles
       , dataProviders = Result.withDefault Dict.empty (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) dataProviders)
       , account = NoAccount
+      , screeningStatus = Eth.Screening.Blocked
+      , pendingScreeningAccount = Nothing
       , network = Nothing
       , commonViewsModel = initCommonViewsModel
       , connectedEthWalletModel = initConnectedEthWalletModel

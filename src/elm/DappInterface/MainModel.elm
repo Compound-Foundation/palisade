@@ -36,6 +36,7 @@ import Eth.Compound exposing (CompoundMsg(..), CompoundState)
 import Eth.Config exposing (Config)
 import Eth.Governance
 import Eth.Oracle exposing (OracleMsg(..), OracleState)
+import Eth.Screening
 import Eth.Token exposing (CToken, TokenMsg(..), TokenState)
 import Eth.Transaction exposing (TransactionState)
 import Json.Decode
@@ -138,6 +139,8 @@ type alias Model =
     , dataProviders : Dict String String
     , configAbis : Json.Encode.Value
     , account : Account
+    , screeningStatus : Eth.Screening.ScreeningStatus
+    , pendingScreeningAccount : Maybe CustomerAddress
     , commonViewsModel : CommonViews.Model
     , connectedEthWalletModel : ConnectedEthWallet.Model
     , claimCompModalState : ClaimCompModal.Model
