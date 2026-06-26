@@ -71,6 +71,7 @@ window.addEventListener('load', function () {
       providerType: providerType(globEthereum),
       userAgent: navigator.userAgent,
       dataProviders: process.env.DATA_PROVIDERS,
+      screeningEndpoint: process.env.SCREENING_ENDPOINT,
     },
   });
 

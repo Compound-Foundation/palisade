@@ -26,6 +26,7 @@ import DappInterface.Page exposing (Page(..), getPage, getPageTitle)
 import DappInterface.PrimaryActionModal
 import DappInterface.Privacy as DappPrivacy
 import DappInterface.Propose as Propose
+import DappInterface.ScreeningErrorOverlay as ScreeningErrorOverlay
 import DappInterface.Terms as DappTerms
 import DappInterface.Vote as Vote
 import Decimal exposing (Decimal)
@@ -34,6 +35,7 @@ import Eth.Compound exposing (CompoundMsg(..), clearCompoundState, compoundInit,
 import Eth.Config exposing (Config, loadConfigs)
 import Eth.Governance exposing (GovernanceMsg(..))
 import Eth.Oracle exposing (OracleMsg(..), oracleInit, oracleSubscriptions, oracleUpdate)
+import Eth.Screening
 import Eth.Token exposing (TokenMsg(..), clearTokenState, tokenInit, tokenNewBlockCmd, tokenSubscriptions, tokenUpdate)
 import Eth.Transaction as Transaction exposing (TransactionMsg)
 import Html exposing (Html, a, button, div, span, text)
@@ -87,6 +89,8 @@ type Msg
     | CheckVersion Time.Posix
     | CheckedVersion (Result Http.Error Float)
     | RefreshGasPrice (Result Http.Error CompoundApi.GasService.Models.API_GasPriceResponse)
+    | ScreeningResult CustomerAddress (Result Http.Error Bool)
+    | DismissScreeningOverlay
 
 
 type alias Flags =
@@ -98,6 +102,7 @@ type alias Flags =
     , userAgent : Json.Encode.Value
     , providerType : Json.Encode.Value
     , language : String
+    , screeningEndpoint : String
     }
 
 
@@ -193,7 +198,7 @@ primaryActionModalTranslator =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userAgent, providerType, language } =
+init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userAgent, providerType, language, screeningEndpoint } =
     let
         initialPage =
             Url.fromString path
@@ -258,6 +263,10 @@ init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userA
       , configAbis = configAbiFiles
       , dataProviders = Result.withDefault Dict.empty (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) dataProviders)
       , account = NoAccount
+      , screeningStatus = Eth.Screening.Blocked
+      , pendingScreeningAccount = Nothing
+      , screeningOverlayVisible = False
+      , screeningEndpoint = screeningEndpoint
       , network = Nothing
       , commonViewsModel = initCommonViewsModel
       , connectedEthWalletModel = initConnectedEthWalletModel
@@ -343,6 +352,90 @@ newBlockCmd apiBaseUrlMap maybeNetwork blockNumber previousBlockNumber ({ dataPr
             Cmd.none
 
 
+applyConnectedAccount : Maybe Config -> CustomerAddress -> Model -> ( Model, Cmd Msg )
+applyConnectedAccount maybeConfig newAccount model =
+    let
+        -- If this is an account switching and we have an existing block and network we want to clear some
+        -- internal models and trigger a newBlockCmd to refresh everything immediately.
+        ( isAccountSwitch, updatedModelFromSetAccount ) =
+            let
+                newAccountModel =
+                    { model | account = Acct newAccount Nothing }
+            in
+            case ( model.account, model.blockNumber ) of
+                ( Acct existingAccount _, Just currentBlockNumber ) ->
+                    if Ethereum.getCustomerAddressString existingAccount /= Ethereum.getCustomerAddressString newAccount then
+                        ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
+
+                    else
+                        ( False, newAccountModel )
+
+                ( NoAccount, _ ) ->
+                    ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
+
+                _ ->
+                    ( False, newAccountModel )
+
+        pageCmd =
+            case model.page of
+                Home ->
+                    case ( maybeConfig, model.blockNumber ) of
+                        ( Just config, Just blockNumber ) ->
+                            Cmd.batch
+                                []
+
+                        _ ->
+                            Cmd.none
+
+                Vote ->
+                    case ( maybeConfig, model.blockNumber ) of
+                        ( Just config, Just blockNumber ) ->
+                            Cmd.batch
+                                [ Vote.getVoteDashboardData model.configs model.network (Just blockNumber) model.account
+                                ]
+
+                        _ ->
+                            Cmd.none
+
+                Admin ->
+                    Admin.getQueuedTransactions model.configs model.network
+
+                _ ->
+                    Cmd.none
+
+        updatedBorrowingContainerState =
+            if isAccountSwitch then
+                DappInterface.Container.handleAccountSwitch model.borrowingContainerState
+
+            else
+                model.borrowingContainerState
+
+        syncBlockCmd =
+            case ( isAccountSwitch, model.blockNumber ) of
+                ( True, Just blockNumber ) ->
+                    newBlockCmd model.apiBaseUrlMap model.network blockNumber Nothing updatedModelFromSetAccount
+
+                _ ->
+                    Cmd.none
+
+        ( updatedRepl, replCmd ) =
+            Repl.update (Repl.SetAccount newAccount) model.repl
+
+        allCmd =
+            Cmd.batch
+                [ syncBlockCmd
+                , Cmd.map replTranslator replCmd
+                , pageCmd
+                ]
+    in
+    ( { updatedModelFromSetAccount
+        | repl = updatedRepl
+        , borrowingContainerState = updatedBorrowingContainerState
+      }
+    , allCmd
+    )
+
+
 handleUpdatesFromEthConnectedWallet : Maybe Config -> ConnectedEthWallet.InternalMsg -> Model -> ( Model, Cmd Msg )
 handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
     case connectedEthWalletMsg of
@@ -412,88 +505,29 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
             ( { model | network = Nothing }, Cmd.none )
 
         ConnectedEthWallet.SetAccount Nothing ->
-            ( { model | account = NoAccount, compoundState = clearCompoundState model.compoundState }, Cmd.none )
+            ( { model
+                | account = NoAccount
+                , compoundState = clearCompoundState model.compoundState
+                , screeningStatus = Eth.Screening.Blocked
+                , pendingScreeningAccount = Nothing
+                , screeningOverlayVisible = False
+              }
+            , Cmd.none
+            )
 
         ConnectedEthWallet.SetAccount (Just newAccount) ->
-            let
-                -- If this is an account switching and we have an existing block and network we want to clear some
-                -- internal models and trigger a newBlockCmd to refresh everything immediately.
-                ( isAccountSwitch, updatedModelFromSetAccount ) =
-                    let
-                        newAccountModel =
-                            { model | account = Acct newAccount Nothing }
-                    in
-                    case ( model.account, model.blockNumber ) of
-                        ( Acct existingAccount _, Just currentBlockNumber ) ->
-                            if Ethereum.getCustomerAddressString existingAccount /= Ethereum.getCustomerAddressString newAccount then
-                                ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
-
-                            else
-                                ( False, newAccountModel )
-
-                        ( NoAccount, _ ) ->
-                            ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
-
-                        _ ->
-                            ( False, newAccountModel )
-
-                pageCmd =
-                    case model.page of
-                        Home ->
-                            case ( maybeConfig, model.blockNumber ) of
-                                ( Just config, Just blockNumber ) ->
-                                    Cmd.batch
-                                        []
-
-                                _ ->
-                                    Cmd.none
-
-                        Vote ->
-                            case ( maybeConfig, model.blockNumber ) of
-                                ( Just config, Just blockNumber ) ->
-                                    Cmd.batch
-                                        [ Vote.getVoteDashboardData model.configs model.network (Just blockNumber) model.account
-                                        ]
-
-                                _ ->
-                                    Cmd.none
-
-                        Admin ->
-                            Admin.getQueuedTransactions model.configs model.network
-
-                        _ ->
-                            Cmd.none
-
-                updatedBorrowingContainerState =
-                    if isAccountSwitch then
-                        DappInterface.Container.handleAccountSwitch model.borrowingContainerState
-
-                    else
-                        model.borrowingContainerState
-
-                syncBlockCmd =
-                    case ( isAccountSwitch, model.blockNumber ) of
-                        ( True, Just blockNumber ) ->
-                            newBlockCmd model.apiBaseUrlMap model.network blockNumber Nothing updatedModelFromSetAccount
-
-                        _ ->
-                            Cmd.none
-
-                ( updatedRepl, replCmd ) =
-                    Repl.update (Repl.SetAccount newAccount) model.repl
-
-                allCmd =
-                    Cmd.batch
-                        [ syncBlockCmd
-                        , Cmd.map replTranslator replCmd
-                        , pageCmd
-                        ]
-            in
-            ( { updatedModelFromSetAccount
-                | repl = updatedRepl
-                , borrowingContainerState = updatedBorrowingContainerState
+            -- Fail-closed screening gate: hide the account until the endpoint
+            -- explicitly allows it. The account is committed in
+            -- applyConnectedAccount, invoked from the ScreeningResult handler.
+            ( { model
+                | account = NoAccount
+                , screeningStatus = Eth.Screening.Checking
+                , pendingScreeningAccount = Just newAccount
+                , compoundState = clearCompoundState model.compoundState
+                , tokenState = clearTokenState model.tokenState
+                , screeningOverlayVisible = False
               }
-            , allCmd
+            , Eth.Screening.screenAddress model.screeningEndpoint newAccount ScreeningResult
             )
 
         ConnectedEthWallet.ResetToChooseProvider ->
@@ -561,6 +595,10 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
             in
             ( { model
                 | page = getPage location
+
+                -- Navigation dismisses the screening-fail overlay (and produces
+                -- no new screening result, so it stays dismissed while browsing).
+                , screeningOverlayVisible = False
               }
             , newPageCmds
             )
@@ -1137,6 +1175,41 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
                 Err gasPriceResponseError ->
                     ( model, Console.error ("Error getting gas price from Gas Service API: " ++ Utils.Http.showError gasPriceResponseError) )
 
+        ScreeningResult screenedAccount result ->
+            case model.pendingScreeningAccount of
+                Just pending ->
+                    if Ethereum.getCustomerAddressString pending == Ethereum.getCustomerAddressString screenedAccount then
+                        case Eth.Screening.statusFromResult result of
+                            Eth.Screening.Allowed ->
+                                applyConnectedAccount maybeConfig
+                                    screenedAccount
+                                    { model
+                                        | screeningStatus = Eth.Screening.Allowed
+                                        , pendingScreeningAccount = Nothing
+                                        , screeningOverlayVisible = False
+                                    }
+
+                            _ ->
+                                -- Rising edge into blocked: surface the overlay.
+                                ( { model
+                                    | account = NoAccount
+                                    , screeningStatus = Eth.Screening.Blocked
+                                    , pendingScreeningAccount = Nothing
+                                    , screeningOverlayVisible = True
+                                  }
+                                , Cmd.none
+                                )
+
+                    else
+                        -- Stale result for a previously-connected address; ignore.
+                        ( model, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        DismissScreeningOverlay ->
+            ( { model | screeningOverlayVisible = False }, Cmd.none )
+
         KeyPress "`" ->
             update (ReplMsg Repl.Toggle) model
 
@@ -1154,7 +1227,7 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
 view : Model -> Html Msg
 view ({ userLanguage } as model) =
     Html.div [ id "main" ]
-        (viewFull model)
+        (viewFull model ++ [ ScreeningErrorOverlay.view DismissScreeningOverlay model.screeningOverlayVisible ])
 
 
 viewFull : Model -> List (Html Msg)
