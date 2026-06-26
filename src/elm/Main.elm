@@ -88,6 +88,7 @@ type Msg
     | CheckVersion Time.Posix
     | CheckedVersion (Result Http.Error Float)
     | RefreshGasPrice (Result Http.Error CompoundApi.GasService.Models.API_GasPriceResponse)
+    | ScreeningResult CustomerAddress (Result Http.Error Bool)
 
 
 type alias Flags =
@@ -499,10 +500,28 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
             ( { model | network = Nothing }, Cmd.none )
 
         ConnectedEthWallet.SetAccount Nothing ->
-            ( { model | account = NoAccount, compoundState = clearCompoundState model.compoundState }, Cmd.none )
+            ( { model
+                | account = NoAccount
+                , compoundState = clearCompoundState model.compoundState
+                , screeningStatus = Eth.Screening.Blocked
+                , pendingScreeningAccount = Nothing
+              }
+            , Cmd.none
+            )
 
         ConnectedEthWallet.SetAccount (Just newAccount) ->
-            applyConnectedAccount maybeConfig newAccount model
+            -- Fail-closed screening gate: hide the account until the endpoint
+            -- explicitly allows it. The account is committed in
+            -- applyConnectedAccount, invoked from the ScreeningResult handler.
+            ( { model
+                | account = NoAccount
+                , screeningStatus = Eth.Screening.Checking
+                , pendingScreeningAccount = Just newAccount
+                , compoundState = clearCompoundState model.compoundState
+                , tokenState = clearTokenState model.tokenState
+              }
+            , Eth.Screening.screenAddress newAccount ScreeningResult
+            )
 
         ConnectedEthWallet.ResetToChooseProvider ->
             let
@@ -1144,6 +1163,35 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
 
                 Err gasPriceResponseError ->
                     ( model, Console.error ("Error getting gas price from Gas Service API: " ++ Utils.Http.showError gasPriceResponseError) )
+
+        ScreeningResult screenedAccount result ->
+            case model.pendingScreeningAccount of
+                Just pending ->
+                    if Ethereum.getCustomerAddressString pending == Ethereum.getCustomerAddressString screenedAccount then
+                        case Eth.Screening.statusFromResult result of
+                            Eth.Screening.Allowed ->
+                                applyConnectedAccount maybeConfig
+                                    screenedAccount
+                                    { model
+                                        | screeningStatus = Eth.Screening.Allowed
+                                        , pendingScreeningAccount = Nothing
+                                    }
+
+                            _ ->
+                                ( { model
+                                    | account = NoAccount
+                                    , screeningStatus = Eth.Screening.Blocked
+                                    , pendingScreeningAccount = Nothing
+                                  }
+                                , Cmd.none
+                                )
+
+                    else
+                        -- Stale result for a previously-connected address; ignore.
+                        ( model, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         KeyPress "`" ->
             update (ReplMsg Repl.Toggle) model
