@@ -346,6 +346,90 @@ newBlockCmd apiBaseUrlMap maybeNetwork blockNumber previousBlockNumber ({ dataPr
             Cmd.none
 
 
+applyConnectedAccount : Maybe Config -> CustomerAddress -> Model -> ( Model, Cmd Msg )
+applyConnectedAccount maybeConfig newAccount model =
+    let
+        -- If this is an account switching and we have an existing block and network we want to clear some
+        -- internal models and trigger a newBlockCmd to refresh everything immediately.
+        ( isAccountSwitch, updatedModelFromSetAccount ) =
+            let
+                newAccountModel =
+                    { model | account = Acct newAccount Nothing }
+            in
+            case ( model.account, model.blockNumber ) of
+                ( Acct existingAccount _, Just currentBlockNumber ) ->
+                    if Ethereum.getCustomerAddressString existingAccount /= Ethereum.getCustomerAddressString newAccount then
+                        ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
+
+                    else
+                        ( False, newAccountModel )
+
+                ( NoAccount, _ ) ->
+                    ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
+
+                _ ->
+                    ( False, newAccountModel )
+
+        pageCmd =
+            case model.page of
+                Home ->
+                    case ( maybeConfig, model.blockNumber ) of
+                        ( Just config, Just blockNumber ) ->
+                            Cmd.batch
+                                []
+
+                        _ ->
+                            Cmd.none
+
+                Vote ->
+                    case ( maybeConfig, model.blockNumber ) of
+                        ( Just config, Just blockNumber ) ->
+                            Cmd.batch
+                                [ Vote.getVoteDashboardData model.configs model.network (Just blockNumber) model.account
+                                ]
+
+                        _ ->
+                            Cmd.none
+
+                Admin ->
+                    Admin.getQueuedTransactions model.configs model.network
+
+                _ ->
+                    Cmd.none
+
+        updatedBorrowingContainerState =
+            if isAccountSwitch then
+                DappInterface.Container.handleAccountSwitch model.borrowingContainerState
+
+            else
+                model.borrowingContainerState
+
+        syncBlockCmd =
+            case ( isAccountSwitch, model.blockNumber ) of
+                ( True, Just blockNumber ) ->
+                    newBlockCmd model.apiBaseUrlMap model.network blockNumber Nothing updatedModelFromSetAccount
+
+                _ ->
+                    Cmd.none
+
+        ( updatedRepl, replCmd ) =
+            Repl.update (Repl.SetAccount newAccount) model.repl
+
+        allCmd =
+            Cmd.batch
+                [ syncBlockCmd
+                , Cmd.map replTranslator replCmd
+                , pageCmd
+                ]
+    in
+    ( { updatedModelFromSetAccount
+        | repl = updatedRepl
+        , borrowingContainerState = updatedBorrowingContainerState
+      }
+    , allCmd
+    )
+
+
 handleUpdatesFromEthConnectedWallet : Maybe Config -> ConnectedEthWallet.InternalMsg -> Model -> ( Model, Cmd Msg )
 handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
     case connectedEthWalletMsg of
@@ -418,86 +502,7 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
             ( { model | account = NoAccount, compoundState = clearCompoundState model.compoundState }, Cmd.none )
 
         ConnectedEthWallet.SetAccount (Just newAccount) ->
-            let
-                -- If this is an account switching and we have an existing block and network we want to clear some
-                -- internal models and trigger a newBlockCmd to refresh everything immediately.
-                ( isAccountSwitch, updatedModelFromSetAccount ) =
-                    let
-                        newAccountModel =
-                            { model | account = Acct newAccount Nothing }
-                    in
-                    case ( model.account, model.blockNumber ) of
-                        ( Acct existingAccount _, Just currentBlockNumber ) ->
-                            if Ethereum.getCustomerAddressString existingAccount /= Ethereum.getCustomerAddressString newAccount then
-                                ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
-
-                            else
-                                ( False, newAccountModel )
-
-                        ( NoAccount, _ ) ->
-                            ( True, { newAccountModel | compoundState = clearCompoundState model.compoundState, tokenState = clearTokenState model.tokenState } )
-
-                        _ ->
-                            ( False, newAccountModel )
-
-                pageCmd =
-                    case model.page of
-                        Home ->
-                            case ( maybeConfig, model.blockNumber ) of
-                                ( Just config, Just blockNumber ) ->
-                                    Cmd.batch
-                                        []
-
-                                _ ->
-                                    Cmd.none
-
-                        Vote ->
-                            case ( maybeConfig, model.blockNumber ) of
-                                ( Just config, Just blockNumber ) ->
-                                    Cmd.batch
-                                        [ Vote.getVoteDashboardData model.configs model.network (Just blockNumber) model.account
-                                        ]
-
-                                _ ->
-                                    Cmd.none
-
-                        Admin ->
-                            Admin.getQueuedTransactions model.configs model.network
-
-                        _ ->
-                            Cmd.none
-
-                updatedBorrowingContainerState =
-                    if isAccountSwitch then
-                        DappInterface.Container.handleAccountSwitch model.borrowingContainerState
-
-                    else
-                        model.borrowingContainerState
-
-                syncBlockCmd =
-                    case ( isAccountSwitch, model.blockNumber ) of
-                        ( True, Just blockNumber ) ->
-                            newBlockCmd model.apiBaseUrlMap model.network blockNumber Nothing updatedModelFromSetAccount
-
-                        _ ->
-                            Cmd.none
-
-                ( updatedRepl, replCmd ) =
-                    Repl.update (Repl.SetAccount newAccount) model.repl
-
-                allCmd =
-                    Cmd.batch
-                        [ syncBlockCmd
-                        , Cmd.map replTranslator replCmd
-                        , pageCmd
-                        ]
-            in
-            ( { updatedModelFromSetAccount
-                | repl = updatedRepl
-                , borrowingContainerState = updatedBorrowingContainerState
-              }
-            , allCmd
-            )
+            applyConnectedAccount maybeConfig newAccount model
 
         ConnectedEthWallet.ResetToChooseProvider ->
             let
