@@ -3660,14 +3660,6 @@ bn.js@^5.2.3:
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-5.2.3.tgz#16a9e409616b23fef3ccbedb8d42f13bff80295e"
   integrity sha512-EAcmnPkxpntVL+DS7bO1zhcZNvCkxqtkd0ZY53h06GNQ3DEkkGZ/gKgmDv6DdZQGj9BgfSPKtJJ7Dp1GPP8f7w==
 
-bnc-sdk@^2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/bnc-sdk/-/bnc-sdk-2.1.5.tgz#7f40bcf98eb0238882f5436c0e860e60be2867c0"
-  integrity sha512-rtwOGKjal1LQyYrdESdOfCK5L2ocS3tjoWtNacm3rkb+xjDusVnUpF/NgudJpCnv3Mwu9YDWjsLKIPKjwbJL7A==
-  dependencies:
-    crypto-es "^1.2.2"
-    sturdy-websocket "^0.1.12"
-
 body-parser@1.19.0, body-parser@^1.20.3:
   version "1.20.5"
   resolved "https://registry.yarnpkg.com/body-parser/-/body-parser-1.20.5.tgz#303c8c34423d1d6fa799bc764e93c1e4dc6ebf64"
@@ -4450,9 +4442,9 @@ component-emitter@^1.2.1:
   resolved "https://registry.yarnpkg.com/component-emitter/-/component-emitter-1.3.0.tgz#16e4070fba8ae29b679f2215853ee181ab2eabc0"
   integrity sha512-Rd3se6QB+sO1TwqZjscQrurpEPIfO0/yYnSin6Q/rD3mOutHvUrCAhJub3r90uNb+SESBuE0QYoB90YdfatsRg==
 
-"compound-components@https://github.com/compound-finance/compound-components.git#6b033ba07607d6a6abb9a2018c2b243e14d2fef5":
+"compound-components@https://github.com/Compound-Foundation/compound-components.git#dd33559ec3fd9d2949568b174ee324a0eaf2e799":
   version "1.0.2"
-  resolved "https://github.com/compound-finance/compound-components.git#6b033ba07607d6a6abb9a2018c2b243e14d2fef5"
+  resolved "https://github.com/Compound-Foundation/compound-components.git#dd33559ec3fd9d2949568b174ee324a0eaf2e799"
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/preset-env" "^7.0.0"
@@ -4462,7 +4454,6 @@ component-emitter@^1.2.1:
     "@walletconnect/modal" "^2.5.4"
     autoprefixer "^9.7.6"
     babel-loader "^8.0.0"
-    bnc-sdk "^2.1.5"
     case-sensitive-paths-webpack-plugin "^2.1.2"
     chalk "^4.0.0"
     core-js "3"
@@ -4766,11 +4757,6 @@ crypto-browserify@3.12.0, crypto-browserify@^3.11.0:
     public-encrypt "^4.0.0"
     randombytes "^2.0.0"
     randomfill "^1.0.3"
-
-crypto-es@^1.2.2:
-  version "1.2.7"
-  resolved "https://registry.yarnpkg.com/crypto-es/-/crypto-es-1.2.7.tgz#754a6d52319a94fb4eb1f119297f17196b360f88"
-  integrity sha512-UUqiVJ2gUuZFmbFsKmud3uuLcNP2+Opt+5ysmljycFCyhA0+T16XJmo1ev/t5kMChMqWh7IEvURNCqsg+SjZGQ==
 
 crypto-random-string@^1.0.0:
   version "1.0.0"
@@ -11283,13 +11269,6 @@ strip-json-comments@2.0.1, strip-json-comments@~2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha1-PFMZQukIwml8DsNEhYwobHygpgo=
-
-sturdy-websocket@^0.1.12:
-  version "0.1.12"
-  resolved "https://registry.yarnpkg.com/sturdy-websocket/-/sturdy-websocket-0.1.12.tgz#84bb779f948b585a695f76961dc7d1c4a5e87629"
-  integrity sha512-PA7h8LdjaMoIlC5HAwLVzae4raGWgyroscV4oUpEiTtEFINcNa47/CKYT3e98o+FfsJgrclI2pYpaJrz0aaoew==
-  dependencies:
-    lodash.defaults "^4.2.0"
 
 style-loader@^1.2.1:
   version "1.3.0"
