@@ -26,6 +26,7 @@ import DappInterface.Page exposing (Page(..), getPage, getPageTitle)
 import DappInterface.PrimaryActionModal
 import DappInterface.Privacy as DappPrivacy
 import DappInterface.Propose as Propose
+import DappInterface.ScreeningErrorOverlay as ScreeningErrorOverlay
 import DappInterface.Terms as DappTerms
 import DappInterface.Vote as Vote
 import Decimal exposing (Decimal)
@@ -89,6 +90,7 @@ type Msg
     | CheckedVersion (Result Http.Error Float)
     | RefreshGasPrice (Result Http.Error CompoundApi.GasService.Models.API_GasPriceResponse)
     | ScreeningResult CustomerAddress (Result Http.Error Bool)
+    | DismissScreeningOverlay
 
 
 type alias Flags =
@@ -262,6 +264,7 @@ init { path, configurations, configAbiFiles, dataProviders, apiBaseUrlMap, userA
       , account = NoAccount
       , screeningStatus = Eth.Screening.Blocked
       , pendingScreeningAccount = Nothing
+      , screeningOverlayVisible = False
       , network = Nothing
       , commonViewsModel = initCommonViewsModel
       , connectedEthWalletModel = initConnectedEthWalletModel
@@ -505,6 +508,7 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
                 , compoundState = clearCompoundState model.compoundState
                 , screeningStatus = Eth.Screening.Blocked
                 , pendingScreeningAccount = Nothing
+                , screeningOverlayVisible = False
               }
             , Cmd.none
             )
@@ -519,6 +523,7 @@ handleUpdatesFromEthConnectedWallet maybeConfig connectedEthWalletMsg model =
                 , pendingScreeningAccount = Just newAccount
                 , compoundState = clearCompoundState model.compoundState
                 , tokenState = clearTokenState model.tokenState
+                , screeningOverlayVisible = False
               }
             , Eth.Screening.screenAddress newAccount ScreeningResult
             )
@@ -588,6 +593,10 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
             in
             ( { model
                 | page = getPage location
+
+                -- Navigation dismisses the screening-fail overlay (and produces
+                -- no new screening result, so it stays dismissed while browsing).
+                , screeningOverlayVisible = False
               }
             , newPageCmds
             )
@@ -1175,13 +1184,16 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
                                     { model
                                         | screeningStatus = Eth.Screening.Allowed
                                         , pendingScreeningAccount = Nothing
+                                        , screeningOverlayVisible = False
                                     }
 
                             _ ->
+                                -- Rising edge into blocked: surface the overlay.
                                 ( { model
                                     | account = NoAccount
                                     , screeningStatus = Eth.Screening.Blocked
                                     , pendingScreeningAccount = Nothing
+                                    , screeningOverlayVisible = True
                                   }
                                 , Cmd.none
                                 )
@@ -1192,6 +1204,9 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        DismissScreeningOverlay ->
+            ( { model | screeningOverlayVisible = False }, Cmd.none )
 
         KeyPress "`" ->
             update (ReplMsg Repl.Toggle) model
@@ -1210,7 +1225,7 @@ update msg ({ page, configs, apiBaseUrlMap, account, transactionState, bnTransac
 view : Model -> Html Msg
 view ({ userLanguage } as model) =
     Html.div [ id "main" ]
-        (viewFull model)
+        (viewFull model ++ [ ScreeningErrorOverlay.view DismissScreeningOverlay model.screeningOverlayVisible ])
 
 
 viewFull : Model -> List (Html Msg)
