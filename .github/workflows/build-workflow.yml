@@ -65,6 +65,7 @@ jobs:
         env:
           DATA_PROVIDERS: ${{ secrets.DATA_PROVIDERS }}
           WALLET_CONNECT_PROJECT_ID: ${{ secrets.WALLET_CONNECT_PROJECT_ID }}
+          SCREENING_ENDPOINT: ${{ secrets.SCREENING_ENDPOINT }}
 
       - name: Archive App
         uses: actions/upload-artifact@v4
