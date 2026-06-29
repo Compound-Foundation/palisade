@@ -7,5 +7,6 @@
   "NETWORK_MAP": {
     "mainnet": 1
   },
-  "DEFAULT_NETWORK": "mainnet"
+  "DEFAULT_NETWORK": "mainnet",
+  "SCREENING_ENDPOINT": ""
 }

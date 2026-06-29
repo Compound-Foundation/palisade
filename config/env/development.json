@@ -8,5 +8,6 @@
     "mainnet": 1,
     "development": 999
   },
-  "DEFAULT_NETWORK": "mainnet"
+  "DEFAULT_NETWORK": "mainnet",
+  "SCREENING_ENDPOINT": ""
 }

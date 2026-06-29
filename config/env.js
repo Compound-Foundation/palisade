@@ -104,6 +104,13 @@ if (process.env['DATA_PROVIDERS']) {
   }
 }
 
+// The screening endpoint is intentionally NOT committed. Supply it at build/deploy
+// time via the SCREENING_ENDPOINT env var; otherwise it stays empty and address
+// screening fails closed (every wallet connect is blocked).
+if (process.env['SCREENING_ENDPOINT']) {
+  envConfig.SCREENING_ENDPOINT = process.env['SCREENING_ENDPOINT'];
+}
+
 console.log(envConfig);
 
 const configPath = path.join(appDirectory, '/config');
