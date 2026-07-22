@@ -1,0 +1,12 @@
+[
+  {
+    "id": "GHSA-v7cw-rxgx-j29p",
+    "module": "compound-components",
+    "justification": "False positive: our compound-components is installed directly from the Compound-Foundation GitHub repo (pinned commit), not from the npm registry. The advisory flags a malicious package squatting the same name on the public registry; yarn audit matches by name only."
+  },
+  {
+    "id": "GHSA-2p57-rm9w-gvfp",
+    "module": "ip",
+    "justification": "No patched version of `ip` exists (advisory covers <=2.0.1, i.e. every release). Dev-only dependency of webpack-dev-server v3 (local dev server); not part of the production build. Remove when webpack-dev-server is upgraded to v4+, which no longer depends on `ip`."
+  }
+]

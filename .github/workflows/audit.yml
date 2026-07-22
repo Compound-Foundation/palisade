@@ -1,0 +1,21 @@
+name: Dependency Audit
+on: push
+
+jobs:
+  audit:
+    name: yarn audit (high/critical must pass)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      # Runs `yarn audit` against yarn.lock (no install needed) and fails on
+      # any high/critical advisory not allowlisted (with justification) in
+      # scripts/audit-allowlist.json.
+      - name: Audit dependencies
+        run: node scripts/audit-check.js
