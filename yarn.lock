@@ -1010,10 +1010,9 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@compound-finance/sleuth@^1.0.1-alpha8":
-  version "1.0.1-alpha8"
-  resolved "https://registry.yarnpkg.com/@compound-finance/sleuth/-/sleuth-1.0.1-alpha8.tgz#89cc4c3f8b8f7f45728f6014aea239f8551ab992"
-  integrity sha512-hf0myqOzUSZl74nYoi5o2gGb7KC/vp/EcIiczcJO2cA8vI8lylA98S2epgFS9eYtkp5EHE/GutnY8u3WyicfBw==
+"@compound-finance/sleuth@https://github.com/Compound-Foundation/sleuth.git#c1fc9fd6ec4fdd33fb561d4b6e52ff28b1696613":
+  version "1.0.1-alpha4"
+  resolved "https://github.com/Compound-Foundation/sleuth.git#c1fc9fd6ec4fdd33fb561d4b6e52ff28b1696613"
   dependencies:
     "@ethersproject/contracts" "^5.7.0"
     "@ethersproject/providers" "^5.7.2"
@@ -4476,9 +4475,9 @@ component-emitter@^1.2.1:
     webpack-dev-server "^3.7.2"
     yargs "^16.2.0"
 
-"compound-config@https://github.com/compound-finance/compound-config.git#ff8e979ffcb286d09884163cc928688f213abe71":
+"compound-config@https://github.com/Compound-Foundation/compound-config.git#ff8e979ffcb286d09884163cc928688f213abe71":
   version "0.0.0"
-  resolved "https://github.com/compound-finance/compound-config.git#ff8e979ffcb286d09884163cc928688f213abe71"
+  resolved "https://github.com/Compound-Foundation/compound-config.git#ff8e979ffcb286d09884163cc928688f213abe71"
 
 compressible@~2.0.16:
   version "2.0.18"
