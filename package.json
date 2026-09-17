@@ -28,7 +28,7 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/runtime": "^7.9.2",
     "@babel/runtime-corejs3": "^7.10.2",
-    "@compound-finance/sleuth": "^1.0.1-alpha8",
+    "@compound-finance/sleuth": "https://github.com/Compound-Foundation/sleuth.git#c1fc9fd6ec4fdd33fb561d4b6e52ff28b1696613",
     "@material/switch": "^3.0.0",
     "assets-webpack-plugin": "^3.5.1",
     "autoprefixer": "^9.7.6",
