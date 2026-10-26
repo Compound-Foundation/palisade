@@ -8,5 +8,10 @@
     "id": "GHSA-2p57-rm9w-gvfp",
     "module": "ip",
     "justification": "No patched version of `ip` exists (advisory covers <=2.0.1, i.e. every release). Dev-only dependency of webpack-dev-server v3 (local dev server); not part of the production build. Remove when webpack-dev-server is upgraded to v4+, which no longer depends on `ip`."
+  },
+  {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "module": "node-forge",
+    "justification": "No patched version of `node-forge` exists (advisory covers <=1.4.0, i.e. every release). Reached only via webpack-dev-server v3 > selfsigned v1, which uses node-forge to generate a self-signed certificate for `HTTPS=true yarn start`. The advisory concerns RSA PKCS#1 v1.5 signature verification. The only signature that path verifies is on the certificate selfsigned has just signed with its own new key, so no attacker-controlled signature reaches the vulnerable code. Dev-only; not part of the production build. Remove when node-forge ships a fix or the dev server moves to selfsigned v5+ (which does not use node-forge)."
   }
 ]
